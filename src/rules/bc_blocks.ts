@@ -480,7 +480,7 @@ export function initRules_bc_blocks() {
 			}, ModuleCategory.Rules);
 			// We are hooking the eventListener directly here as DialogMenuMapping does not implement _ClickDisabledButton
 			hookFunction("DialogSelfMenuMapping.Pose.eventListeners._ClickDisabledButton", 0, function (this: HTMLButtonElement, args, next) {
-				const C = DialogSelfMenuMapping.Pose.C!;
+				const C = DialogSelfMenuMapping.Pose.C;
 				const clickedPose = DialogSelfMenuMapping.Pose._GetClickedObject(this);
 				if (state.inEffect && state.isEnforced && C.IsPlayer() && clickedPose && state.customData?.poseButtons.includes(clickedPose.Name)) {
 					// This triggers when a restricted pose is attempted to be selected, but is blocked by disable
@@ -777,7 +777,7 @@ export function initRules_bc_blocks() {
 				return next(args);
 			});
 			hookFunction("DialogMenuMapping.items.eventListeners._ClickDisabledButton", 0, function (this: HTMLButtonElement, args, next) {
-				const C = DialogMenuMapping.items.C!;
+				const C = DialogMenuMapping.items.C;
 				const currentItem = DialogMenuMapping.items._GetClickedObject(this);
 				const equippedItem = DialogMenuMapping.items.focusGroup ? InventoryGet(C, DialogMenuMapping.items.focusGroup.Name) : null;
 				if (state.customData?.blockSwappingToggle && currentItem && equippedItem) {
@@ -892,7 +892,7 @@ export function initRules_bc_blocks() {
 				return next(args);
 			});
 			hookFunction("DialogMenuMapping.items.eventListeners._ClickDisabledButton", 0, function (this: HTMLButtonElement, args, next) {
-				const C = DialogMenuMapping.items.C!;
+				const C = DialogMenuMapping.items.C;
 				const currentItem = DialogMenuMapping.items._GetClickedObject(this);
 				const equippedItem = DialogMenuMapping.items.focusGroup ? InventoryGet(C, DialogMenuMapping.items.focusGroup.Name) : null;
 				if (state.customData?.blockSwappingToggle && currentItem && equippedItem) {
@@ -932,7 +932,7 @@ export function initRules_bc_blocks() {
 			}, ModuleCategory.Rules);
 			// We are hooking the eventListener directly here as DialogMenuMapping does not implement _ClickDisabledButton
 			hookFunction("DialogMenuMapping.items.eventListeners._ClickDisabledButton", 0, (args, next) => {
-				const C = DialogMenuMapping.items.C!;
+				const C = DialogMenuMapping.items.C;
 				if (state.inEffect && state.isEnforced && C.IsPlayer()) {
 					// This triggers when an item use is blocked by disable
 					if (state.isLogged) state.triggerAttempt();
@@ -983,7 +983,7 @@ export function initRules_bc_blocks() {
 			}, ModuleCategory.Rules);
 			// We are hooking the eventListener directly here as DialogMenuMapping does not implement _ClickDisabledButton
 			hookFunction("DialogMenuMapping.items.eventListeners._ClickDisabledButton", 0, (args, next) => {
-				const C = DialogMenuMapping.items.C!;
+				const C = DialogMenuMapping.items.C;
 				if (state.inEffect && state.isEnforced && !C.IsPlayer() && dominantCheck(C)) {
 					// This triggers when an item use is blocked by disable
 					if (state.isLogged) state.triggerAttempt(C.MemberNumber);
@@ -1014,7 +1014,7 @@ export function initRules_bc_blocks() {
 		},
 		load(state) {
 			hookFunction("ChatRoomListUpdate", 6, (args, next) => {
-				const CN = args[2];
+				const CN = parseInt(args[2], 10);
 				if (state.isEnforced &&
 					state.customData &&
 					(args[0] === Player.BlackList || args[0] === Player.GhostList) &&
@@ -1043,7 +1043,7 @@ export function initRules_bc_blocks() {
 		defaultLimit: ConditionsLimit.blocked,
 		load(state) {
 			hookFunction("ChatRoomListUpdate", 6, (args, next) => {
-				const CN = args[2];
+				const CN = parseInt(args[2], 10);
 				if (state.isEnforced &&
 					args[0] === Player.WhiteList &&
 					args[1] &&

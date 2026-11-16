@@ -294,7 +294,7 @@ export function initRules_bc_alter() {
 			if (
 				newState
 				&& DialogSelfMenuSelected === "Expression"
-				&& DialogSelfMenuMapping.Expression.C?.IsPlayer()
+				&& DialogSelfMenuMapping.Expression.C.IsPlayer()
 			) {
 				// If the expression menu is open, reload it in order to re-evaluate the disabled state of the `blindness` menu button
 				DialogSelfMenuMapping.Expression.Reload();
@@ -686,22 +686,19 @@ export function initRules_bc_alter() {
 				}
 				return ret;
 			});
-			hookFunction("ChatAdminLoad", 0, async (args, next) => {
-				const ret = await next(args);
-
+			hookFunction("ChatAdminRun", 0, (args, next) => {
+				next(args);
 				if (state.isEnforced && ChatRoomPlayerIsAdmin() && Player.IsRestrained()) {
-					const button = ElementButton.Create("bcx-admin-limit-bound",
-						null,
-						{
-							image: "Icons/Question.png",
-							tooltip: "Some settings are not available due to a BCX rule",
-							noStyling: true,
-						}
-					);
-					ElementWrap("chat-admin-screen-menu")?.append(button);
+					DrawRect(125, 885, 1100, 70, "#ffff88");
+					DrawEmptyRect(125, 885, 1100, 70, "Black");
+					DrawText("Some settings are not available due to a BCX rule.", 675, 920, "Black", "Gray");
 				}
-
-				return ret;
+			});
+			hookFunction("CommonSetScreen", 5, (args, next) => {
+				if (state.isEnforced && args[0] === "Online" && args[1] === "ChatBlockItem" && ChatRoomPlayerIsAdmin() && Player.IsRestrained()) {
+					ChatBlockItemEditable = false;
+				}
+				return next(args);
 			});
 			hookFunction("ChatRoomAdminAction", 5, (args, next) => {
 				const ActionType = args[0] as string;
