@@ -40,7 +40,7 @@ Your owner can add these from the BCX rules menu, like any other rule.
 
 | Rule | What it does |
 | --- | --- |
-| Make struggling harder | Slows down struggling (and optionally lockpicking) instead of blocking it. The strength kept is set between 10% and 90%. |
+| Make struggling harder | Slows down the strength struggle minigame instead of blocking it. The progress kept is set between 10% and 90%. |
 | Lock accepted limits | Once a rule or curse is allowed, you cannot set it back to "blocked". Only an owner can. |
 | Permanent rules and curses | No one can remove your rules and curses before a set date. |
 | Auto-escalate punishments | Every new rule violation extends the timer locks you wear and can beep your owner. |

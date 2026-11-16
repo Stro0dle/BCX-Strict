@@ -4,6 +4,7 @@ import { hookFunction, patchFunction } from "../patching";
 import { MiscCheat } from "../constants";
 import { modStorage, modStorageSync } from "./storage";
 import { GetDialogMenuButtonArray } from "./dialog";
+import { BCX_setInterval } from "../BCXContext";
 
 export const cheatChangeHooks: Partial<Record<MiscCheat, (enabled: boolean) => void>> = {};
 
@@ -69,6 +70,8 @@ export function HookDialogMenuButtonClick(button: string, fn: DialogMenuButtonCl
 }
 
 export class ModuleMiscPatches extends BaseModule {
+	private devtoolsCheckInterval: number | null = null;
+
 	load() {
 		if (!Array.isArray(modStorage.cheats)) {
 			modStorage.cheats = [];
@@ -206,7 +209,7 @@ export class ModuleMiscPatches extends BaseModule {
 
 		// 1b. DevTools detection — periodic window size check for docked DevTools
 		let devtoolsWarned = false;
-		setInterval(() => {
+		this.devtoolsCheckInterval = BCX_setInterval(() => {
 			const widthDiff = window.outerWidth - window.innerWidth > 160;
 			const heightDiff = window.outerHeight - window.innerHeight > 160;
 			if ((widthDiff || heightDiff) && !devtoolsWarned) {
@@ -287,15 +290,23 @@ export class ModuleMiscPatches extends BaseModule {
 			return false;
 		});
 
-		hookFunction("StruggleDrawStrengthProgress", 7, ((args: any[], next: (args: any[]) => any) => {
-			const C = args[0] as Character | undefined;
-			if (C && C.ID === 0 && Date.now() < struggleCooldownUntil) {
-				args[1] = 0;
+		// The strength minigame is only ever played by the player: no progress at all during the cooldown
+		hookFunction("StruggleStrengthProcess", 7, (args, next) => {
+			const before = StruggleProgress;
+			next(args);
+			if (Date.now() < struggleCooldownUntil && StruggleProgress > before) {
+				StruggleProgress = before;
 			}
-			return next(args);
-		}) as any);
+		});
 
 		//#endregion
+	}
+
+	unload() {
+		if (this.devtoolsCheckInterval !== null) {
+			clearInterval(this.devtoolsCheckInterval);
+			this.devtoolsCheckInterval = null;
+		}
 	}
 
 	run() {

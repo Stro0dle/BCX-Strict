@@ -1450,16 +1450,15 @@ export function initRules_bc_blocks() {
 			},
 		},
 		load(state) {
-			hookFunction("StruggleDrawStrengthProgress", 5, ((args: any[], next: (args: any[]) => any) => {
-				if (state.isEnforced && state.customData) {
-					const C = args[0] as Character | undefined;
-					if (C && C.ID === 0) {
-						const multiplier = state.customData.strengthMultiplier / 100;
-						args[1] = Math.round((args[1] as number) * multiplier);
-					}
+			// The strength minigame is only ever played by the player: keep only part of each progress gain
+			hookFunction("StruggleStrengthProcess", 5, (args, next) => {
+				const before = StruggleProgress;
+				next(args);
+				if (state.isEnforced && state.customData && StruggleProgress > before) {
+					const multiplier = state.customData.strengthMultiplier / 100;
+					StruggleProgress = before + (StruggleProgress - before) * multiplier;
 				}
-				return next(args);
-			}) as any, ModuleCategory.Rules);
+			}, ModuleCategory.Rules);
 		},
 	});
 

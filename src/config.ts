@@ -135,7 +135,6 @@ export const FUNCTION_HASHES: Record<string, string[]> = {
 	SpeechGarble: ["9D669F73"],
 	SpeechGetTotalGagLevel: ["C55B705A"],
 	StableGenericDrawProgress: ["6BACDAA2"],
-	StruggleDrawStrengthProgress: ["4755C02D"],
 	StruggleStrengthDraw: ["4406AD10"],
 	TextGet: ["4DDE5794"],
 	ValidationCanAddOrRemoveItem: ["80E3D94D"],
