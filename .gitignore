@@ -1,0 +1,10 @@
+node_modules
+dist
+/docs
+/coverage
+/.vs
+/.vscode
+.node-version
+
+/.vscode/settings.json
+/.vs
