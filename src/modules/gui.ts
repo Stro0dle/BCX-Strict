@@ -106,15 +106,21 @@ export class ModuleGUI extends BaseModule {
 
 			next(args);
 			const C = this.getInformationSheetCharacter();
+			const playerIsRestrained = Player.IsRestrained();
+			const restrainedTooltip = "Cannot access BCX while restrained";
 			if (firstTimeInit) {
 				if (C && C.isPlayer()) {
-					DrawButton(1815, 685, 90, 90, "", "White", icon_BCX);
+					DrawButton(1815, 685, 90, 90, "", playerIsRestrained ? "#ddd" : "White", icon_BCX, playerIsRestrained ? restrainedTooltip : null, playerIsRestrained);
 					DrawRect(1300, 685, 500, 90, "Black");
-					DrawText(`You can find BCX here ►`, 1550, 685 + 45, "White");
+					DrawText(playerIsRestrained ? restrainedTooltip : `You can find BCX here ►`, 1550, 685 + 45, "White");
 				}
 			} else if (C && C.BCXVersion !== null) {
 				const playerHasAccessToCharacter = C.playerHasAccessToCharacter();
-				DrawButton(1815, 685, 90, 90, "", playerHasAccessToCharacter ? "White" : "#ddd", icon_BCX, playerHasAccessToCharacter ? "BCX" : "Needs BC item permission", !playerHasAccessToCharacter);
+				const enabled = playerHasAccessToCharacter && !playerIsRestrained;
+				const tooltip = !playerHasAccessToCharacter ? "Needs BC item permission"
+					: playerIsRestrained ? restrainedTooltip
+					: "BCX";
+				DrawButton(1815, 685, 90, 90, "", enabled ? "White" : "#ddd", icon_BCX, tooltip, !enabled);
 			}
 		});
 
