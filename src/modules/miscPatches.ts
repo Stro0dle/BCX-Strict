@@ -246,6 +246,10 @@ export class ModuleMiscPatches extends BaseModule {
 					InfoBeep("You cannot access settings while restrained!");
 					return Promise.resolve();
 				}
+				if (args[1] === "Title") {
+					InfoBeep("You cannot change your title while restrained!");
+					return Promise.resolve();
+				}
 			}
 			return next(args);
 		});
@@ -279,6 +283,9 @@ export class ModuleMiscPatches extends BaseModule {
 				const prevAlign = MainCanvas.textAlign;
 				MainCanvas.textAlign = "center";
 				if (C.IsPlayer()) {
+					if (!TitleIsForced(TitleGet(C))) {
+						drawRestrainedButton(1815, 190, "Icons/Title.png", "Cannot change your title while restrained");
+					}
 					drawRestrainedButton(1815, 305, "Icons/Preference.png", "Cannot access settings while restrained");
 					drawRestrainedButton(1815, 420, "Icons/FriendList.png", "Cannot access the friend list while restrained");
 					drawRestrainedButton(1815, 535, "Icons/Introduction.png", "Cannot access the bio while restrained");
