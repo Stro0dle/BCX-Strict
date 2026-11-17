@@ -268,6 +268,34 @@ export class ModuleMiscPatches extends BaseModule {
 			return next(args);
 		});
 
+		// 4d. Grey out the profile menu buttons leading to blocked screens when restrained
+		const drawRestrainedButton = (x: number, y: number, image: string, text: string) => {
+			DrawButton(x, y, 90, 90, "", "#ddd", image, text, true);
+		};
+		hookFunction("InformationSheetRun", 5, (args, next) => {
+			const ret = next(args);
+			const C = InformationSheetSelection;
+			if (C && Player.IsRestrained()) {
+				const prevAlign = MainCanvas.textAlign;
+				MainCanvas.textAlign = "center";
+				if (C.IsPlayer()) {
+					drawRestrainedButton(1815, 305, "Icons/Preference.png", "Cannot access settings while restrained");
+					drawRestrainedButton(1815, 420, "Icons/FriendList.png", "Cannot access the friend list while restrained");
+					drawRestrainedButton(1815, 535, "Icons/Introduction.png", "Cannot access the bio while restrained");
+					if (C.HasOwnerNotes()) {
+						drawRestrainedButton(1715, 535, "Icons/Management.png", "Cannot access owner notes while restrained");
+					}
+				} else if (C.IsOnline()) {
+					drawRestrainedButton(1815, 190, "Icons/Introduction.png", "Cannot access the bio while restrained");
+					if (C.HasOwnerNotes() || C.IsFullyOwnedByPlayer()) {
+						drawRestrainedButton(1715, 190, "Icons/Management.png", "Cannot access owner notes while restrained");
+					}
+				}
+				MainCanvas.textAlign = prevAlign;
+			}
+			return ret;
+		});
+
 		// 5. Struggle cooldown — block after too many attempts
 		const STRUGGLE_MAX_ATTEMPTS = 3;
 		const STRUGGLE_COOLDOWN_MS = 10 * 60_000;
