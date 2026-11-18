@@ -377,6 +377,18 @@ export class ModuleMiscPatches extends BaseModule {
 			}
 		});
 
+		// 4g. Block all / and ! commands when restrained
+		hookFunction("CommandParse", 10, (args, next) => {
+			if (Player.IsRestrained()) {
+				const msg = (args[0] as string).trim();
+				if (msg.startsWith("/") || msg.startsWith("!")) {
+					ChatRoomSendLocal("Commands are blocked while restrained!");
+					return true;
+				}
+			}
+			return next(args);
+		});
+
 		// 5. Struggle cooldown — block after too many attempts
 		const STRUGGLE_MAX_ATTEMPTS = 3;
 		const STRUGGLE_COOLDOWN_MS = 10 * 60_000;
