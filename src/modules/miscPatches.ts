@@ -447,7 +447,7 @@ export class ModuleMiscPatches extends BaseModule {
 			return next(args);
 		});
 
-		// 4j. Block sending emotes, whispers, and OOC messages when restrained
+		// 4j. Block sending emotes and OOC messages when restrained (whispers left to BCX rules)
 		hookFunction("ChatRoomSendChat", 12, (args, next) => {
 			if (Player.IsRestrained()) {
 				const chat = document.getElementById("InputChat") as HTMLTextAreaElement | null;
@@ -463,10 +463,6 @@ export class ModuleMiscPatches extends BaseModule {
 						chat.value = "";
 						return;
 					}
-				}
-				if (ChatRoomTargetMemberNumber > 0) {
-					ChatRoomSendLocal("Whispers are blocked while restrained!");
-					return;
 				}
 			}
 			return next(args);
