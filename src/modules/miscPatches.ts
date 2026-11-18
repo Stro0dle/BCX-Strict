@@ -433,11 +433,11 @@ export class ModuleMiscPatches extends BaseModule {
 			return next(args);
 		});
 
-		// 4i. Hide incoming emotes, whispers, and OOC messages when restrained
+		// 4i. Hide incoming emotes and OOC messages when restrained (whispers stay visible)
 		hookFunction("ChatRoomMessage", 11, (args, next) => {
 			if (Player.IsRestrained()) {
 				const data = args[0] as ServerChatRoomMessage;
-				if (data.Type === "Emote" || data.Type === "Whisper") {
+				if (data.Type === "Emote") {
 					return;
 				}
 				if (data.Type === "Chat" && typeof data.Content === "string" && /\(/.test(data.Content)) {
