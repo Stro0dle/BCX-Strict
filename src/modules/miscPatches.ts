@@ -207,20 +207,52 @@ export class ModuleMiscPatches extends BaseModule {
 			}
 		}, true);
 
-		// 1b. DevTools detection — periodic window size check for docked DevTools
+		// 1b. DevTools nuke — disconnect and blank the page
+		const nukeOnDevTools = () => {
+			try { ServerDisconnect(undefined, true); } catch (_) { /* ignore */ }
+			document.title = "DevTools Detected";
+			document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:40vh'>DevTools detected — session terminated.</h1>";
+			window.stop();
+		};
+
+		// 1c. DevTools detection — periodic window size check for docked DevTools
 		let devtoolsWarned = false;
 		this.devtoolsCheckInterval = BCX_setInterval(() => {
 			const widthDiff = window.outerWidth - window.innerWidth > 160;
 			const heightDiff = window.outerHeight - window.innerHeight > 160;
-			if ((widthDiff || heightDiff) && !devtoolsWarned) {
-				devtoolsWarned = true;
-				ChatRoomSendLocal("DevTools detected open! Close them immediately.");
-				InfoBeep("DevTools detected! Close them immediately.");
-			}
-			if (!widthDiff && !heightDiff) {
+			if (widthDiff || heightDiff) {
+				if (!devtoolsWarned) {
+					devtoolsWarned = true;
+					nukeOnDevTools();
+				}
+			} else {
 				devtoolsWarned = false;
 			}
-		}, 10_000);
+		}, 2_000);
+
+		// 1d. DevTools detection — debugger trap (freezes execution when DevTools is open)
+		const runDebuggerTrap = () => {
+			// eslint-disable-next-line no-debugger
+			(function () { debugger; })();
+		};
+		BCX_setInterval(runDebuggerTrap, 1_000);
+
+		// 1e. DevTools detection — console getter trap (detects detached/undocked DevTools)
+		const consoleDetect = Object.create(null);
+		let consoleOpen = false;
+		Object.defineProperty(consoleDetect, "id", {
+			get: () => {
+				consoleOpen = true;
+				return "";
+			},
+		});
+		BCX_setInterval(() => {
+			consoleOpen = false;
+			console.debug(consoleDetect);
+			if (consoleOpen) {
+				nukeOnDevTools();
+			}
+		}, 2_000);
 
 		// 2. Block difficulty changes when restrained
 		hookFunction("PreferenceSubscreenDifficultyConfirm", 6, (args, next) => {
