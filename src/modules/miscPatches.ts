@@ -377,7 +377,7 @@ export class ModuleMiscPatches extends BaseModule {
 			}
 		});
 
-		// 4g. Block all / and ! commands when restrained
+		// 4g. Block ALL commands (/, !, .) when restrained — covers every entry point
 		hookFunction("CommandParse", 10, (args, next) => {
 			if (Player.IsRestrained()) {
 				const msg = (args[0] as string).trim();
@@ -385,6 +385,50 @@ export class ModuleMiscPatches extends BaseModule {
 					ChatRoomSendLocal("Commands are blocked while restrained!");
 					return true;
 				}
+			}
+			return next(args);
+		});
+		hookFunction("CommandExecute", 10, (args, next) => {
+			if (Player.IsRestrained()) {
+				ChatRoomSendLocal("Commands are blocked while restrained!");
+				return false;
+			}
+			return next(args);
+		});
+		hookFunction("ChatRoomSendChat", 11, (args, next) => {
+			if (Player.IsRestrained()) {
+				const chat = document.getElementById("InputChat") as HTMLTextAreaElement | null;
+				if (chat) {
+					const msg = chat.value.trim();
+					if (msg.startsWith("/") || msg.startsWith("!") || msg.startsWith(".")) {
+						ChatRoomSendLocal("Commands are blocked while restrained!");
+						chat.value = "";
+						return;
+					}
+				}
+			}
+			return next(args);
+		});
+
+		// 4h. Block safeword when restrained
+		hookFunction("ChatRoomSafewordChatCommand", 10, (args, next) => {
+			if (Player.IsRestrained()) {
+				ChatRoomSendLocal("Safeword is blocked while restrained!");
+				return;
+			}
+			return next(args);
+		});
+		hookFunction("ChatRoomSafewordRevert", 10, (args, next) => {
+			if (Player.IsRestrained()) {
+				InfoBeep("Safeword is blocked while restrained!");
+				return;
+			}
+			return next(args);
+		});
+		hookFunction("ChatRoomSafewordRelease", 10, (args, next) => {
+			if (Player.IsRestrained()) {
+				InfoBeep("Safeword is blocked while restrained!");
+				return;
 			}
 			return next(args);
 		});
