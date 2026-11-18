@@ -272,7 +272,8 @@ export class ModuleMiscPatches extends BaseModule {
 			return next(args);
 		});
 
-		// 4d. Grey out the profile menu buttons leading to blocked screens when restrained
+		// 4d. Grey out ALL profile menu buttons when restrained, except the exit button
+		// BCX button is handled separately by gui.ts
 		const drawRestrainedButton = (x: number, y: number, image: string, text: string) => {
 			DrawButton(x, y, 90, 90, "", "#ddd", image, text, true);
 		};
@@ -301,6 +302,27 @@ export class ModuleMiscPatches extends BaseModule {
 				MainCanvas.textAlign = prevAlign;
 			}
 			return ret;
+		});
+
+		// 4e. Block clicks on ALL greyed button areas when restrained (except exit at 1815,800)
+		hookFunction("InformationSheetClick", 4, (args, next) => {
+			if (Player.IsRestrained()) {
+				const C = InformationSheetSelection;
+				if (C) {
+					const blockedAreas: [number, number][] = C.IsPlayer()
+						? [[1815, 190], [1815, 305], [1815, 420], [1815, 535], [1715, 535]]
+						: C.IsOnline()
+							? [[1815, 190], [1715, 190]]
+							: [];
+					for (const [x, y] of blockedAreas) {
+						if (MouseIn(x, y, 90, 90)) {
+							InfoBeep("Cannot access while restrained!");
+							return;
+						}
+					}
+				}
+			}
+			return next(args);
 		});
 
 		// 5. Struggle cooldown — block after too many attempts
