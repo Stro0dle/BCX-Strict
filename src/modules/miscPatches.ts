@@ -326,13 +326,24 @@ export class ModuleMiscPatches extends BaseModule {
 		});
 
 		// 4f. Grey out ALL dialog menu options when restrained, except "Leave this menu"
-		// The menubar exit icon (top right) is unaffected by clickStatusCallbacks
+		// The menubar exit icon (top right) is unaffected
 		// @ts-expect-error bcx rule handling
 		DialogMenuMapping.dialog.clickStatusCallbacks.hcc_restrained_lock = function (_C: Character, dialogLine: DialogLine) {
 			if (!Player.IsRestrained()) return;
 			if (dialogLine.Function?.includes("DialogLeave")) return;
 			return "Cannot access while restrained";
 		};
+		hookFunction("DialogMenuMapping.dialog._ReloadButtonGrid", 0, (args, next) => {
+			next(args);
+			if (Player.IsRestrained()) {
+				const buttonGrid = args[1] as HTMLElement;
+				for (const button of buttonGrid.querySelectorAll<HTMLButtonElement>("button")) {
+					const dialogLine = DialogMenuMapping.dialog._GetClickedObject(button);
+					if (dialogLine?.Function?.includes("DialogLeave")) continue;
+					button.disabled = true;
+				}
+			}
+		});
 
 		// 5. Struggle cooldown — block after too many attempts
 		const STRUGGLE_MAX_ATTEMPTS = 3;
