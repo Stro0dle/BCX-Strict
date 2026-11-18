@@ -433,6 +433,45 @@ export class ModuleMiscPatches extends BaseModule {
 			return next(args);
 		});
 
+		// 4i. Hide incoming emotes, whispers, and OOC messages when restrained
+		hookFunction("ChatRoomMessage", 11, (args, next) => {
+			if (Player.IsRestrained()) {
+				const data = args[0] as ServerChatRoomMessage;
+				if (data.Type === "Emote" || data.Type === "Whisper") {
+					return;
+				}
+				if (data.Type === "Chat" && typeof data.Content === "string" && /\(/.test(data.Content)) {
+					return;
+				}
+			}
+			return next(args);
+		});
+
+		// 4j. Block sending emotes, whispers, and OOC messages when restrained
+		hookFunction("ChatRoomSendChat", 12, (args, next) => {
+			if (Player.IsRestrained()) {
+				const chat = document.getElementById("InputChat") as HTMLTextAreaElement | null;
+				if (chat) {
+					const msg = chat.value.trim();
+					if (msg.startsWith("*") || msg.startsWith("/me ") || msg.startsWith("/action ")) {
+						ChatRoomSendLocal("Emotes are blocked while restrained!");
+						chat.value = "";
+						return;
+					}
+					if (/\(/.test(msg)) {
+						ChatRoomSendLocal("OOC messages are blocked while restrained!");
+						chat.value = "";
+						return;
+					}
+				}
+				if (ChatRoomTargetMemberNumber > 0) {
+					ChatRoomSendLocal("Whispers are blocked while restrained!");
+					return;
+				}
+			}
+			return next(args);
+		});
+
 		// 5. Struggle cooldown — block after too many attempts
 		const STRUGGLE_MAX_ATTEMPTS = 3;
 		const STRUGGLE_COOLDOWN_MS = 10 * 60_000;
