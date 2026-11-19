@@ -4,7 +4,7 @@ import { arrayUnique, capitalizeFirstLetter, dictionaryProcess, formatTimeInterv
 import { ChatRoomActionMessage, ChatRoomSendLocal, getCharacterName, getVisibleGroupName, isAssetGroupName, itemColorsEquals } from "../utilsClub";
 import { AccessLevel, checkPermissionAccess, getCharacterAccessLevel, registerPermission } from "./authority";
 import { notifyOfChange, queryHandlers } from "./messaging";
-import { modStorageSync } from "./storage";
+import { modStorageSync, modStorageSyncBatch } from "./storage";
 import { LogEntryType, logMessage } from "./log";
 import { moduleIsEnabled } from "./presets";
 import { ModuleCategory, Preset, ConditionsLimit } from "../constants";
@@ -154,6 +154,11 @@ export function curseDefaultItemCurseProperty(asset: Asset): boolean {
 }
 
 export function curseItem(Group: AssetGroupName, curseProperty: boolean | null, character: ChatroomCharacter | null, showMessage: boolean = true): boolean {
+	// Cursing changes both the curse and the log; save only once (it was saved 3 times per curse)
+	return modStorageSyncBatch(() => curseItemUnbatched(Group, curseProperty, character, showMessage));
+}
+
+function curseItemUnbatched(Group: AssetGroupName, curseProperty: boolean | null, character: ChatroomCharacter | null, showMessage: boolean): boolean {
 	if (!moduleIsEnabled(ModuleCategory.Curses))
 		return false;
 
@@ -246,15 +251,18 @@ export function curseBatch(mode: "items" | "clothes" | "body", includingEmpty: b
 		}
 	}
 
-	for (const group of assetGroups) {
-		if (ConditionsGetCondition("curses", group.Name))
-			continue;
-		if (character && !ConditionsCheckAccess("curses", group.Name, character))
-			continue;
-		if (!curseItem(group.Name, null, character, false))
-			return false;
-	}
-	return true;
+	// Cursing many slots at once; save only once at the end (one save per slot froze the game)
+	return modStorageSyncBatch(() => {
+		for (const group of assetGroups) {
+			if (ConditionsGetCondition("curses", group.Name))
+				continue;
+			if (character && !ConditionsCheckAccess("curses", group.Name, character))
+				continue;
+			if (!curseItem(group.Name, null, character, false))
+				return false;
+		}
+		return true;
+	});
 }
 
 export function curseLift(Group: AssetGroupName, character: ChatroomCharacter | null): boolean {
