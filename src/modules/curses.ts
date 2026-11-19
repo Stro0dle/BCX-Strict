@@ -81,7 +81,16 @@ const ItemColorSchema = zod.union([
 	zod.array(BCColorSchema),
 ]);
 
-export function curseMakeSavedProperty(properties: ItemProperties | undefined): ItemProperties {
+/**
+ * Whether `Property.Difficulty` should be cursed for items in the given group.
+ * Only restraints (`Item` category) use it; on clothing/body it is meaningless and BC
+ * strips it on appearance reload, which would make the curse trigger endlessly.
+ */
+export function curseShouldCurseDifficulty(group: AssetGroup | null | undefined): boolean {
+	return group?.Category !== "Appearance";
+}
+
+export function curseMakeSavedProperty(properties: ItemProperties | undefined, group?: AssetGroup | null): ItemProperties {
 	const result: ItemProperties = {};
 
 	if (isObject(properties)) {
@@ -95,6 +104,8 @@ export function curseMakeSavedProperty(properties: ItemProperties | undefined): 
 				} else {
 					console.error(`HardCoreClub: Bad effect of properties: `, properties.Effect);
 				}
+			} else if (key === "Difficulty" && !curseShouldCurseDifficulty(group)) {
+				continue;
 			} else if (!CURSE_IGNORED_PROPERTIES.has(key) && properties[key] !== undefined) {
 				// @ts-expect-error: Copying member between same type objects
 				result[key] = cloneDeep(properties[key]);
@@ -111,7 +122,7 @@ function curseCreateCurseItemInfo(item: Item): CursedItemInfo {
 		curseProperty: false,
 		Difficulty: item.Difficulty || undefined,
 		Color: !ItemColorIsDefault(item) ? cloneDeep(item.Color) : undefined,
-		Property: curseMakeSavedProperty(item.Property),
+		Property: curseMakeSavedProperty(item.Property, item.Asset.Group),
 		Craft: ValidationVerifyCraftData(item.Craft, item.Asset).result,
 	};
 
@@ -683,6 +694,15 @@ export class ModuleCurses extends BaseModule {
 					console.warn(`HardCoreClub: Unknown cursed item ${group}:${info.Name}, removing it`, info);
 					return false;
 				}
+
+				// Migration: older saves could have cursed `Difficulty` on clothing/body, which loops endlessly
+				if (isObject(info.Property) && "Difficulty" in info.Property && !curseShouldCurseDifficulty(assetGroup)) {
+					delete info.Property.Difficulty;
+					if (Object.keys(info.Property).length === 0) {
+						delete info.Property;
+					}
+					console.info(`HardCoreClub: Removed cursed Difficulty from clothing/body curse ${group}:${info.Name}`);
+				}
 				return true;
 			},
 			loadCategorySpecificGlobalData: (data) => {
@@ -1140,6 +1160,12 @@ export class ModuleCurses extends BaseModule {
 					continue;
 
 				if (CURSE_IGNORED_PROPERTIES.has(key)) {
+					delete curseProperty[key];
+					continue;
+				}
+
+				// Difficulty is not cursed on clothing/body (see `curseShouldCurseDifficulty`)
+				if (key === "Difficulty" && !curseShouldCurseDifficulty(assetGroup)) {
 					delete curseProperty[key];
 					continue;
 				}
