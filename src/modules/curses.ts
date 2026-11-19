@@ -335,6 +335,9 @@ export class ModuleCurses extends BaseModule {
 		autoremove: [],
 	};
 
+	/** Set when a curse changed the player's appearance during a tick; refresh and server update are done once in `afterCurseTick` */
+	private pendingAppearanceUpdate: boolean = false;
+
 	init() {
 		registerPermission("curses_normal", {
 			name: "Allows handling curses on non-limited object slots",
@@ -1107,8 +1110,7 @@ export class ModuleCurses extends BaseModule {
 		if (curse === null) {
 			if (currentItem && currentItem.Asset.Group.AllowNone) {
 				InventoryRemove(Player, group, false);
-				CharacterRefresh(Player, true);
-				ChatRoomCharacterUpdate(Player);
+				this.pendingAppearanceUpdate = true;
 				this.pendingMessages.remove.push(currentItem.Asset.Description);
 				BCXGlobalEventSystem.emitEvent("curseTrigger", {
 					action: "remove",
@@ -1219,8 +1221,7 @@ export class ModuleCurses extends BaseModule {
 		}
 
 		if (changeType) {
-			CharacterRefresh(Player, true);
-			ChatRoomCharacterUpdate(Player);
+			this.pendingAppearanceUpdate = true;
 			this.pendingMessages[changeType].push(asset.Description);
 			BCXGlobalEventSystem.emitEvent("curseTrigger", {
 				action: changeType,
@@ -1240,6 +1241,13 @@ export class ModuleCurses extends BaseModule {
 	}
 
 	private afterCurseTick(): void {
+		// A single refresh + server update for all curses applied this tick (one per curse froze the game and flooded the room after imports)
+		if (this.pendingAppearanceUpdate) {
+			this.pendingAppearanceUpdate = false;
+			CharacterRefresh(Player, true);
+			ChatRoomCharacterUpdate(Player);
+		}
+
 		for (const changeType of Object.keys(this.pendingMessages) as (cursedChange | "autoremove")[]) {
 			const list = this.pendingMessages[changeType];
 			if (list.length === 0)

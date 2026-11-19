@@ -140,7 +140,33 @@ export function calculateSaveHmac(save: string, key: string): string {
 	return result;
 }
 
+let syncBatchDepth = 0;
+let syncBatchPending = false;
+
+/**
+ * Runs `callback` with saving deferred: every `modStorageSync` requested meanwhile is merged into a single one, done at the end.
+ *
+ * Each sync serializes, compresses, verifies and uploads the whole save,
+ * so operations changing many things at once (e.g. imports) must use this to avoid freezing the game and flooding the server.
+ */
+export function modStorageSyncBatch<T>(callback: () => T): T {
+	syncBatchDepth++;
+	try {
+		return callback();
+	} finally {
+		syncBatchDepth--;
+		if (syncBatchDepth === 0 && syncBatchPending) {
+			syncBatchPending = false;
+			modStorageSync();
+		}
+	}
+}
+
 export function modStorageSync() {
+	if (syncBatchDepth > 0) {
+		syncBatchPending = true;
+		return;
+	}
 	if (moduleInitPhase !== ModuleInitPhase.ready && moduleInitPhase !== ModuleInitPhase.destroy)
 		return;
 	if (deletionPending || firstTimeInit)

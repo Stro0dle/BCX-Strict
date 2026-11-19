@@ -5,6 +5,7 @@ import { moduleInitPhase } from "../moduleManager";
 import { isObject } from "../utils";
 import { AccessLevel, checkPermissionAccess, getPlayerPermissionSettings, registerPermission } from "./authority";
 import { queryHandlers } from "./messaging";
+import { modStorageSyncBatch } from "./storage";
 import { BaseModule } from "./_BaseModule";
 
 const EXPORT_IMPORT_FORMAT_VERSION = 1;
@@ -108,7 +109,8 @@ export function ExportImportDoImport(category: string, data: string, character: 
 		}
 	}
 
-	return definition.import(zodResult.data, character);
+	// Importing changes many entries one by one; save only once at the end
+	return modStorageSyncBatch(() => definition.import(zodResult.data, character));
 }
 
 export class ModuleExportImport extends BaseModule {
